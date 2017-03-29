@@ -183,11 +183,13 @@
      *  @param {function(ur)}  successCallback  function which is called after the screen capturing succeeded.
      *  @param {function(err)} errorCallback    function which is called after capturing the screen has failed.
 	 *  @param includeWebView Indicates if the ARchitect web view should be included in the generated screenshot or not.
-	 *  @param imagePathInBundleorNullForPhotoLibrary If a file path or file name is given, the generated screenshot will be saved in the application bundle. Passing null will save the photo in the device photo library.
+	 *  @param imagePathInBundleorNullFOrPhotoLibrary If a file path or file name is given, the generated screenshot will be saved in the application bundle. Passing null will save the photo in the device photo library.
+	 *  @param returnImageAsBase64 If true, will return the image as a base64 string
+	 *  @param saveFile If true, will save the image to the path provided in imagePathInBundleOrBullfForPhotoLibrary
 	 */
-	WikitudePlugin.prototype.captureScreen = function(successCallback, errorCallback, includeWebView, imagePathInBundleOrNullForPhotoLibrary)
+	WikitudePlugin.prototype.captureScreen = function(successCallback, errorCallback, includeWebView, imagePathInBundleOrNullForPhotoLibrary, returnImageAsBase64, saveFile)
     {
-		cordova.exec(successCallback, errorCallback, "WikitudePlugin", "captureScreen", [includeWebView, imagePathInBundleOrNullForPhotoLibrary]);
+		cordova.exec(successCallback, errorCallback, "WikitudePlugin", "captureScreen", [includeWebView, imagePathInBundleOrNullForPhotoLibrary, returnImageAsBase64, saveFile]);
 	};
 
 	/**
