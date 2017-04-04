@@ -1227,7 +1227,7 @@ public class WikitudePlugin extends CordovaPlugin implements ArchitectUrlListene
                 // unexpected error;
             }
             String name = "";
-            if (args.length() > 1 && !args.isNull(1))
+            if (args.length() > 1 && !args.isNull(1) && !args.optBoolean(1))
             {
                 try
                 {
@@ -1241,49 +1241,24 @@ public class WikitudePlugin extends CordovaPlugin implements ArchitectUrlListene
 
             final String fileName = name;
 
-            boolean getImageAsBase64;
-            try {
-                getImageAsBase64 = args.getBoolean(2);
-            } catch(Exception e) {
-                getImageAsBase64 = false;
-            }
-
-            final boolean base64 = getImageAsBase64;
-
-            boolean saveFileToDevice; 
-            try {
-                saveFileToDevice = args.getBoolean(3);
-            } catch (Exception ex){
-                saveFileToDevice = false;
-            }
-
-            final boolean saveFile = saveFileToDevice;
-
             architectView.captureScreen(captureMode, new CaptureScreenCallback()
             {
                 @Override
                 public void onScreenCaptured(Bitmap screenCapture)
                 {
-                    //Convert bitmap to base64.
-
-                    String base64String; 
-
-                    if(base64) {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                        screenCapture.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
-                        byte[] byteArray = byteArrayOutputStream.toByteArray();
-                        base64String = Base64.encodeToString(byteArray, Base64.DEFAULT);
-                    } else {
-                        base64String = "";
-                    }
-
-                    final String encodedBase64 = base64String;
-
-                    final File screenCaptureFile;
+                    File screenCaptureFile = null;
                     final String name = System.currentTimeMillis() + ".jpg";
+
                     try
-                    {
-                        if(saveFile){
+                    {   
+                        String base64String = ""; 
+                        if(args.optBoolean(1)){
+                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                            screenCapture.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
+                            byte[] byteArray = byteArrayOutputStream.toByteArray();
+                            base64String = Base64.encodeToString(byteArray, Base64.DEFAULT);
+                        }
+                        else {
                             if (fileName.equals(""))
                             {
                                 final File imageDirectory = Environment.getExternalStorageDirectory();
@@ -1323,32 +1298,21 @@ public class WikitudePlugin extends CordovaPlugin implements ArchitectUrlListene
 
                             Context context= cordova.getActivity().getApplicationContext();
                             context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);
-                        } else {
-                            screenCaptureFile = null;
                         }
+
+                        final String base64Str = base64String;
+                        final File screenCaptureFileFinal = screenCaptureFile;
 
                         cordova.getActivity().runOnUiThread(new Runnable()
                         {
                             @Override
                             public void run()
                             {
-                                String _capturePath;
-                                if(saveFile){
-                                    _capturePath = screenCaptureFile.getAbsolutePath();
+                                if(args.optBoolean(1)){
+                                    callContext.success(base64Str);
                                 } else {
-                                    _capturePath = "";
-                                }
-
-                                final String absoluteCaptureImagePath = _capturePath;
-                                
-                                if(saveFile && base64){
-                                    callContext.success(absoluteCaptureImagePath + " Base64: " + encodedBase64);
-                                } else if (saveFile && !base64) {
+                                    final String absoluteCaptureImagePath = screenCaptureFileFinal.getAbsolutePath();
                                     callContext.success(absoluteCaptureImagePath);
-                                } else if (base64 && !saveFile) {
-                                    callContext.success(encodedBase64);
-                                } else if(!base64 && !saveFile) {
-                                    callContext.success("I don't know what you want...");
                                 }
 
                                 // 								in case you want to sent the pic to other applications, uncomment these lines (for future use)
