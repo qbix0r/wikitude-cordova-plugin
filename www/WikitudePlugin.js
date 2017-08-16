@@ -33,7 +33,13 @@
          */
         this.CameraFocusRangeNone = 0;
         this.CameraFocusRangeNear = 1;
-        this.CameraFocusRangeFar  = 2;
+		this.CameraFocusRangeFar  = 2;
+		
+		this.PluginStateClosed = 0;
+		this.PluginStateHidden = 1;
+		this.PluginStateOpen = 2;
+
+		this.CurrentPluginState = this.PluginStateClosed;
 	};
 
 
@@ -96,6 +102,8 @@
 		    "StartupConfiguration" : startupConfiguration
 		}]);
 
+		this.CurrentPluginState = this.PluginStateOpen;
+
 		// We add an event listener on the resume and pause event of the application life-cycle
 		document.addEventListener("resume", this.onResume, false);
 		document.addEventListener("pause", this.onPause, false);
@@ -108,6 +116,8 @@
 	 */
 	WikitudePlugin.prototype.close = function() {
 
+		this.CurrentPluginState = this.PluginStateClosed;
+
 		document.removeEventListener("pause", this.onPause, false);
 		document.removeEventListener("resume", this.onResume, false);
 		document.removeEventListener("backbutton", this.onBackButton, false);
@@ -119,6 +129,7 @@
 	 *	Use this function to only hide the Wikitude SDK. All location and rendering updates are still active.
 	 */
 	WikitudePlugin.prototype.hide = function() {
+		this.CurrentPluginState = this.PluginStateHidden;
 		cordova.exec(this.onWikitudeOK, this.onWikitudeError, "WikitudePlugin", "hide", [""]);
 	};
 
@@ -126,6 +137,7 @@
 	 *	Use this function to show the Wikitude SDK again if it was hidden before.
 	 */
 	WikitudePlugin.prototype.show = function() {
+		this.CurrentPluginState = this.PluginStateOpen;
 		cordova.exec(this.onWikitudeOK, this.onWikitudeError, "WikitudePlugin", "show", [""]);
 	};
 
