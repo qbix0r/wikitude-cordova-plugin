@@ -91,12 +91,12 @@ NSString * const WTArchitectDebugDelegateMessageKey = @"WTArchitectDebugDelegate
 
     [self.architectView setShouldRotate:YES toInterfaceOrientation:[[UIApplication sharedApplication] statusBarOrientation]];
 
-
-    UISwipeGestureRecognizer *swipeBackRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(didSwipeBack:)];
-    swipeBackRecognizer.direction = UISwipeGestureRecognizerDirectionRight;
-    swipeBackRecognizer.delegate = self;
+    // Uncomment to enable swipe navigation
+    // UISwipeGestureRecognizer *swipeBackRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(didSwipeBack:)];
+    // swipeBackRecognizer.direction = UISwipeGestureRecognizerDirectionRight;
+    // swipeBackRecognizer.delegate = self;
     
-    [self.view addGestureRecognizer:swipeBackRecognizer];
+    // [self.view addGestureRecognizer:swipeBackRecognizer];
 }
 
 - (void)viewWillAppear:(BOOL)animated
