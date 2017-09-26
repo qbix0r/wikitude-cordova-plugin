@@ -601,13 +601,15 @@ NSString * const kWTWikitudePlugin_localPathPrefix                  = @"WTCordov
 
             WTScreenshotSaveMode saveMode;
             NSString *screenshotBundlePath = nil;
-            if ( [[command.arguments objectAtIndex:1] isKindOfClass:[NSString class]] )
+            if ( [[command.arguments objectAtIndex:1] isKindOfClass:[NSString class]]/* && [[command.arguments objectAtIndex:1] isEqualToString:@"delegate"]*/ )
             {
                 saveMode = WTScreenshotSaveMode_BundleDirectory;
                 screenshotBundlePath = [command.arguments objectAtIndex:1];
             }
-            else
+            else if( [command.arguments objectAtIndex:1] )
             {
+                saveMode = WTScreenshotSaveMode_Delegate;
+            } else {
                 saveMode = WTScreenshotSaveMode_PhotoLibrary;
             }
 
@@ -817,24 +819,27 @@ NSString * const kWTWikitudePlugin_localPathPrefix                  = @"WTCordov
 {
     CDVPluginResult *pluginResult = nil;
 
-
     if (self.screenshotCallbackId)
     {
+
         NSDictionary *context = [[aNotification userInfo] objectForKey:WTArchitectNotificationContextKey];
         WTScreenshotSaveMode mode = [[context objectForKey:kWTScreenshotSaveModeKey] integerValue];
-
 
         NSString *resultMessage = nil;
         if (WTScreenshotSaveMode_BundleDirectory == mode)
         {
             resultMessage = [context objectForKey:kWTScreenshotBundleDirectoryKey];
         }
-        else
+        else if(WTScreenshotSaveMode_Delegate == mode)
         {
-            resultMessage = @"Screenshot was added to the device Photo Library";
+            UIImage *image = [context objectForKey: kWTScreenshotImageKey];
+            resultMessage = [UIImagePNGRepresentation(image) base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
+        } else {
+            resultMessage = @"Screenshot was added to the device Photo Library"; 
         }
 
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:resultMessage];
+
         [pluginResult setKeepCallbackAsBool:YES];
     }
 

@@ -3,6 +3,7 @@ package com.wikitude.phonegap;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +35,7 @@ import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.Settings;
 import android.text.format.DateUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -1227,7 +1229,7 @@ public class WikitudePlugin extends CordovaPlugin implements ArchitectUrlListene
                 // unexpected error;
             }
             String name = "";
-            if (args.length() > 1 && !args.isNull(1))
+            if (args.length() > 1 && !args.isNull(1) && !args.optBoolean(1))
             {
                 try
                 {
@@ -1246,57 +1248,74 @@ public class WikitudePlugin extends CordovaPlugin implements ArchitectUrlListene
                 @Override
                 public void onScreenCaptured(Bitmap screenCapture)
                 {
-                    final File screenCaptureFile;
+                    File screenCaptureFile = null;
                     final String name = System.currentTimeMillis() + ".jpg";
+
                     try
-                    {
-                        if (fileName.equals(""))
-                        {
-                            final File imageDirectory = Environment.getExternalStorageDirectory();
-                            if (imageDirectory == null)
-                            {
-                                callContext.error("External storage not available");
-                            }
-                            screenCaptureFile = new File (imageDirectory, name);
+                    {   
+                        String base64String = ""; 
+                        if(args.optBoolean(1)){
+                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                            screenCapture.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
+                            byte[] byteArray = byteArrayOutputStream.toByteArray();
+                            base64String = Base64.encodeToString(byteArray, Base64.DEFAULT);
                         }
-                        else
-                        {
-                            File screenCapturePath = new File (fileName);
-                            if (screenCapturePath.isDirectory())
+                        else {
+                            if (fileName.equals(""))
                             {
-                                screenCaptureFile = new File (screenCapturePath, name);
+                                final File imageDirectory = Environment.getExternalStorageDirectory();
+                                if (imageDirectory == null)
+                                {
+                                    callContext.error("External storage not available");
+                                }
+                                screenCaptureFile = new File (imageDirectory, name);
                             }
                             else
                             {
-                                screenCaptureFile = screenCapturePath;
+                                File screenCapturePath = new File (fileName);
+                                if (screenCapturePath.isDirectory())
+                                {
+                                    screenCaptureFile = new File (screenCapturePath, name);
+                                }
+                                else
+                                {
+                                    screenCaptureFile = screenCapturePath;
+                                }
                             }
+
+                            if (screenCaptureFile.exists())
+                            {
+                                screenCaptureFile.delete();
+                            }
+
+                            final FileOutputStream out = new FileOutputStream(screenCaptureFile);
+                            screenCapture.compress(Bitmap.CompressFormat.JPEG, 90, out);
+                            out.flush();
+                            out.close();
+
+                            ContentValues values = new ContentValues();
+                            values.put(Images.Media.DATE_TAKEN, System.currentTimeMillis());
+                            values.put(Images.Media.MIME_TYPE, "image/jpeg");
+                            values.put(MediaStore.MediaColumns.DATA, screenCaptureFile.getAbsolutePath());
+
+                            Context context= cordova.getActivity().getApplicationContext();
+                            context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);
                         }
 
-                        if (screenCaptureFile.exists())
-                        {
-                            screenCaptureFile.delete();
-                        }
-
-                        final FileOutputStream out = new FileOutputStream(screenCaptureFile);
-                        screenCapture.compress(Bitmap.CompressFormat.JPEG, 90, out);
-                        out.flush();
-                        out.close();
-
-                        ContentValues values = new ContentValues();
-                        values.put(Images.Media.DATE_TAKEN, System.currentTimeMillis());
-                        values.put(Images.Media.MIME_TYPE, "image/jpeg");
-                        values.put(MediaStore.MediaColumns.DATA, screenCaptureFile.getAbsolutePath());
-
-                        Context context= cordova.getActivity().getApplicationContext();
-                        context.getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);
+                        final String base64Str = base64String;
+                        final File screenCaptureFileFinal = screenCaptureFile;
 
                         cordova.getActivity().runOnUiThread(new Runnable()
                         {
                             @Override
                             public void run()
                             {
-                                final String absoluteCaptureImagePath = screenCaptureFile.getAbsolutePath();
-                                callContext.success(absoluteCaptureImagePath);
+                                if(args.optBoolean(1)){
+                                    callContext.success(base64Str);
+                                } else {
+                                    final String absoluteCaptureImagePath = screenCaptureFileFinal.getAbsolutePath();
+                                    callContext.success(absoluteCaptureImagePath);
+                                }
 
                                 // 								in case you want to sent the pic to other applications, uncomment these lines (for future use)
                                 //								final Intent share = new Intent(Intent.ACTION_SEND);
